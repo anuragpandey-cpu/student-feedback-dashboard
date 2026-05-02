@@ -161,6 +161,8 @@ def logout():
     flash("You have been logged out.", "info")
     return redirect("/")
 
+# Initialize database on startup (for Render/Gunicorn)
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
