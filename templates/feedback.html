@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Portal - Submit Feedback</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast {{ category }} show" data-duration="4000">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container scroll-reveal">
+        <header>
+            <div>
+                <h2>Student Portal</h2>
+                <p style="color: var(--text-muted); font-style: italic;">Submit your academic feedback</p>
+            </div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                {% if role == 'Teacher' %}
+                <a href="/dashboard" class="logout-btn" style="color: var(--primary); font-weight: 600;">View Dashboard &rarr;</a>
+                {% endif %}
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+        </header>
+
+        <div style="display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap;">
+            
+            <div style="flex: 1; min-width: 300px; text-align: center;" class="scroll-reveal">
+                <img src="{{ url_for('static', filename='feedback_vector.png') }}" alt="Student Writing" style="max-width: 100%; border-radius: 8px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
+                <h3 style="margin-top: 24px; font-size: 1.5rem;">Your Voice Matters</h3>
+                <p style="color: var(--text-muted); margin-top: 12px;">Constructive feedback drives institutional excellence.</p>
+            </div>
+
+            <div class="classic-card scroll-reveal" style="flex: 1.5; min-width: 350px;">
+                <form action="/submit" method="POST">
+                    <div class="form-group">
+                        <label>Select Department</label>
+                        <select name="department" required>
+                            <option value="" disabled selected>Choose a department...</option>
+                            <option value="CSE">Computer Science (CSE)</option>
+                            <option value="IT">Information Technology (IT)</option>
+                            <option value="ECE">Electronics & Communication (ECE)</option>
+                            <option value="ME">Mechanical Engineering (ME)</option>
+                            <option value="Civil">Civil Engineering</option>
+                            <option value="Applied Sciences">Applied Sciences</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 32px;">
+                        <label>Your Feedback</label>
+                        <textarea name="feedback" placeholder="Describe your academic experience with clarity and detail..." rows="6" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 16px 40px;">
+                        <span>Submit Feedback</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const reveals = document.querySelectorAll(".scroll-reveal");
+            setTimeout(() => {
+                reveals.forEach(el => el.classList.add("visible"));
+            }, 100);
+
+            // Toast Auto-hide
+            const toasts = document.querySelectorAll(".toast");
+            toasts.forEach(toast => {
+                const duration = parseInt(toast.getAttribute("data-duration")) || 3000;
+                setTimeout(() => {
+                    toast.classList.remove("show");
+                    setTimeout(() => toast.remove(), 400); 
+                }, duration);
+            });
+        });
+    </script>
+</body>
+</html>

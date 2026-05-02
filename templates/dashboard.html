@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Portal - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast {{ category }} show" data-duration="4000">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container scroll-reveal">
+        <header>
+            <div>
+                <h2>Sentiment Dashboard</h2>
+                <p style="color: var(--text-muted); font-style: italic;">Analytical overview of student feedback</p>
+            </div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+        </header>
+
+        <div style="display: flex; gap: 40px; margin-bottom: 40px; align-items: center;">
+            <div style="flex: 1;" class="scroll-reveal">
+                <p style="font-size: 1.1rem; line-height: 1.8; color: var(--text-main); margin-bottom: 20px;">
+                    Welcome to the central analytics dashboard. Here, faculty and administration can review an automated natural language processing classification of student submissions, ensuring prompt identification of academic concerns and successes.
+                </p>
+            </div>
+            <div style="flex: 1; text-align: right;" class="scroll-reveal">
+                <img src="{{ url_for('static', filename='dashboard_vector.png') }}" alt="Analytics Overview" style="max-height: 150px; border-radius: 8px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));">
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="stats-grid scroll-reveal">
+            <div class="stat-card positive">
+                <h3>Positive</h3>
+                <p>{{ positive }}</p>
+            </div>
+            <div class="stat-card neutral">
+                <h3>Neutral</h3>
+                <p>{{ neutral }}</p>
+            </div>
+            <div class="stat-card negative">
+                <h3>Negative</h3>
+                <p>{{ negative }}</p>
+            </div>
+            <div class="stat-card total">
+                <h3>Total Responses</h3>
+                <p>{{ total }}</p>
+            </div>
+            <div class="stat-card" style="border-top-color: #4CAF50;">
+                <h3>Health Score</h3>
+                <p>{{ health_score }}%</p>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Overall Pie Chart -->
+            <div class="panel scroll-reveal">
+                <h3 style="margin-bottom: 24px; font-size: 1.2rem;">Overall Sentiment Distribution</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Department Bar Chart -->
+            <div class="panel scroll-reveal">
+                <h3 style="margin-bottom: 24px; font-size: 1.2rem;">Departmental Breakdown</h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Feedback -->
+        <div class="panel scroll-reveal" style="margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 style="font-size: 1.2rem; margin: 0;">Recent Feedback Entries</h3>
+                <select id="deptFilter" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font-family: 'Inter', sans-serif;">
+                    <option value="All">All Departments</option>
+                    {% for dept, count in dept_stats %}
+                        <option value="{{ dept }}">{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="feedback-list" id="feedbackContainer">
+                {% if recent_feedback %}
+                    {% for item in recent_feedback %}
+                        <div class="feedback-item {{ item.sentiment|lower }}">
+                            <div class="feedback-meta">
+                                <span class="dept-tag">{{ item.department }}</span>
+                                <span style="color: {% if item.sentiment == 'Positive' %}var(--success){% elif item.sentiment == 'Negative' %}var(--danger){% else %}var(--warning){% endif %};">
+                                    {{ item.sentiment }}
+                                </span>
+                            </div>
+                            <p style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
+                                "{{ item.feedback_text }}"
+                            </p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-muted); font-style: italic;">No feedback records found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Animations
+            const reveals = document.querySelectorAll(".scroll-reveal");
+            setTimeout(() => {
+                reveals.forEach((el, index) => {
+                    setTimeout(() => el.classList.add("visible"), index * 100);
+                });
+            }, 100);
+
+            const toasts = document.querySelectorAll(".toast");
+            toasts.forEach(toast => {
+                const duration = parseInt(toast.getAttribute("data-duration")) || 3000;
+                setTimeout(() => {
+                    toast.classList.remove("show");
+                    setTimeout(() => toast.remove(), 400); 
+                }, duration);
+            });
+
+            // Charts Data
+            const positiveCount = {{ positive }};
+            const neutralCount = {{ neutral }};
+            const negativeCount = {{ negative }};
+            
+            // Colors matching Old Money theme
+            const colorPositive = '#2E5A27'; // Classic Green
+            const colorNeutral = '#C5A059';  // Gold
+            const colorNegative = '#8B0000'; // Burgundy
+
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative'],
+                    datasets: [{
+                        data: [positiveCount, neutralCount, negativeCount],
+                        backgroundColor: [colorPositive, colorNeutral, colorNegative],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 13 } } }
+                    },
+                    animation: { animateScale: true, animateRotate: true, duration: 1500 }
+                }
+            });
+
+            // Parse Pandas output for Bar Chart
+            const deptData = {{ dept_sentiment | tojson | safe }};
+            const departments = Object.keys(deptData);
+            
+            const posData = departments.map(d => deptData[d].Positive || 0);
+            const neuData = departments.map(d => deptData[d].Neutral || 0);
+            const negData = departments.map(d => deptData[d].Negative || 0);
+
+            // Bar Chart
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: departments,
+                    datasets: [
+                        { label: 'Positive', data: posData, backgroundColor: colorPositive },
+                        { label: 'Neutral', data: neuData, backgroundColor: colorNeutral },
+                        { label: 'Negative', data: negData, backgroundColor: colorNegative }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, border: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 13 } } }
+                    },
+                    animation: { duration: 1500 }
+                }
+            });
+
+            // Filtering Logic
+            const deptFilter = document.getElementById('deptFilter');
+            const feedbackContainer = document.getElementById('feedbackContainer');
+            const feedbackItems = feedbackContainer.querySelectorAll('.feedback-item');
+
+            if(deptFilter) {
+                deptFilter.addEventListener('change', function() {
+                    const selectedDept = this.value;
+                    feedbackItems.forEach(item => {
+                        const itemDept = item.querySelector('.dept-tag').innerText;
+                        if (selectedDept === 'All' || itemDept === selectedDept) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

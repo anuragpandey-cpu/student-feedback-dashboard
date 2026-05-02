@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Portal - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Toast Notifications container -->
+    <div id="toast-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast {{ category }} show" data-duration="4000">
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="split-layout">
+        <div class="split-left">
+            <img id="login-image" src="{{ url_for('static', filename='login_vector.png') }}" alt="Academic Excellence" class="scroll-reveal" style="transition: opacity 0.3s ease;">
+        </div>
+        
+        <div class="split-right">
+            <div class="auth-card scroll-reveal" style="max-width: 400px; width: 100%;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 8px;">Portal Login</h2>
+                <p style="color: var(--text-muted); margin-bottom: 40px; font-family: 'Playfair Display', serif; font-style: italic;">Enter your credentials to continue.</p>
+                
+                <form action="/login" method="POST">
+                    <div class="role-selector">
+                        <div class="role-option">
+                            <input type="radio" id="student-role" name="role" value="Student" checked>
+                            <label for="student-role">Student</label>
+                        </div>
+                        <div class="role-option">
+                            <input type="radio" id="teacher-role" name="role" value="Teacher">
+                            <label for="teacher-role">Teacher</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" name="username" placeholder="e.g. student123" required>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 40px;">
+                        <label>Password</label>
+                        <input type="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">
+                        <span>Sign In</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vanilla JS for scroll reveal
+        document.addEventListener("DOMContentLoaded", () => {
+            const reveals = document.querySelectorAll(".scroll-reveal");
+            setTimeout(() => {
+                reveals.forEach(el => el.classList.add("visible"));
+            }, 100);
+
+            // Toast Auto-hide
+            const toasts = document.querySelectorAll(".toast");
+            toasts.forEach(toast => {
+                const duration = parseInt(toast.getAttribute("data-duration")) || 3000;
+                setTimeout(() => {
+                    toast.classList.remove("show");
+                    setTimeout(() => toast.remove(), 400); // wait for transition
+                }, duration);
+            });
+
+            // Dynamic Image Switching
+            const studentRadio = document.getElementById("student-role");
+            const teacherRadio = document.getElementById("teacher-role");
+            const loginImage = document.getElementById("login-image");
+            
+            const studentImageSrc = "{{ url_for('static', filename='login_vector.png') }}";
+            const teacherImageSrc = "{{ url_for('static', filename='dashboard_vector.png') }}";
+
+            function switchImage(src) {
+                loginImage.style.opacity = 0;
+                setTimeout(() => {
+                    loginImage.src = src;
+                    loginImage.style.opacity = 1;
+                }, 300);
+            }
+
+            studentRadio.addEventListener("change", () => {
+                if(studentRadio.checked) switchImage(studentImageSrc);
+            });
+            
+            teacherRadio.addEventListener("change", () => {
+                if(teacherRadio.checked) switchImage(teacherImageSrc);
+            });
+        });
+    </script>
+</body>
+</html>
