@@ -4,6 +4,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from textblob import TextBlob
 import pandas as pd
 import os
+import nltk
+nltk.download('punkt')
+nltk.download('punkt_tab')
 
 app = Flask(__name__)
 app.secret_key = "secretkey"
@@ -31,7 +34,7 @@ class Feedback(db.Model):
 # ---------------- INITIALIZATION ----------------
 def init_db():
     with app.app_context():
-        db.drop_all() # Resetting once to apply new schema
+        # db.drop_all() # Commented out for deployment to prevent data loss on restart
         db.create_all()
         # Default Teacher
         if not User.query.filter_by(username='teacher').first():
